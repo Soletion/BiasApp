@@ -1,0 +1,144 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+pythonenv*
+
+# Virtual Environment
+venv/
+.env/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb
+
+# Streamlit
+.streamlit/secrets.toml
+.streamlit/*.db
+
+# ============================================
+# DATOS: La CARPETA data SÍ se incluye
+# pero NO su contenido de caché
+# ============================================
+data/
+data/cache/
+data/cache/*
+!data/cache/.gitkeep
+data/*.pkl
+data/*.pickle
+data/*.db
+data/*.sqlite
+
+# Archivos de log
+*.log
+logs/
+log/
+
+# Variables de entorno
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+
+# API Keys y secretos
+secrets/
+config/secrets/
+*.secret
+credentials.json
+
+# Archivos de configuración personal
+config.local.py
+settings.local.py
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# OS específicos
+Thumbs.db
+desktop.ini
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Archivos de backup
+*.bak
+*.backup
+*.old
+*.orig
+
+# Archivos temporales
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Docker
+*.log
+*.pid
+*.pid.lock
+.dockerignore
+
+# Requirements específicos
+requirements.local.txt
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Archivos grandes
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.pyc
+*.pyo
+
+# Análisis técnico
+technical_indicators_cache/
+backtest_results/
+
+# Reportes
+reports/
+output/
+*.html
+*.xlsx
+
+# FinBERT cache
+.cache/
+models_cache/
+transformers_cache/
+
+# Streamlit secrets en producción
+secrets.toml
