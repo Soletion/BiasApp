@@ -7,6 +7,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from datetime import datetime
+from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
 
@@ -491,18 +492,119 @@ with tab2:
         Para ver noticias reales, configura tu API key de NewsAPI en el archivo `.env`
         """)
 
-# TAB 3: CALENDARIO
+# TAB 3: CALENDARIO (NUEVO DISEÑO)
 with tab3:
-    st.markdown("### 📅 Eventos Económicos Próximos")
+    st.markdown("### 📅 Calendario Económico Semanal")
+    st.caption("Eventos de alto/medio impacto que afectan al EUR/USD (ordenados por fecha/hora)")
     
-    events_df = st.session_state.data_ingestion.get_forex_factory_events()
+    # Obtener eventos de la semana
+    events_df = st.session_state.data_ingestion.get_calendar_events()
     
     if not events_df.empty:
-        display_df = events_df[['fecha', 'evento', 'impacto', 'moneda']].head(10)
-        st.dataframe(display_df, use_container_width=True, hide_index=True)
-        st.info("💡 **Impacto:** Eventos de alto impacto pueden generar volatilidad significativa en EUR/USD")
+        # Obtener días de la semana actual
+        today = datetime.now().date()
+        monday = today - timedelta(days=today.weekday())
+        week_days = [(monday + timedelta(days=i)) for i in range(7)]
+        
+        # Mapeo de días en español
+        dias_semana = {
+            0: 'Lunes', 1: 'Martes', 2: 'Miércoles', 
+            3: 'Jueves', 4: 'Viernes', 5: 'Sábado', 6: 'Domingo'
+        }
+        
+        # Mostrar eventos por día
+        for day_date in week_days:
+            day_events = events_df[events_df['Fecha'] == day_date]
+            
+            if not day_events.empty:
+                # Título del día
+                if day_date == today:
+                    st.markdown(f"##### 🔥 {dias_semana[day_date.weekday()]} {day_date.strftime('%d/%m')} - HOY")
+                elif day_date < today:
+                    st.markdown(f"##### ⚪ {dias_semana[day_date.weekday()]} {day_date.strftime('%d/%m')} (Pasado)")
+                else:
+                    st.markdown(f"##### 📅 {dias_semana[day_date.weekday()]} {day_date.strftime('%d/%m')}")
+                
+                # Tabla de eventos del día
+                for _, event in day_events.iterrows():
+                    # Determinar estilo según estado
+                    if event['Estado'] == 'pasado':
+                        st.markdown(f"""
+                        <div style='color: #888888; margin: 8px 0; padding: 8px; border-left: 3px solid #888;'>
+                        <table style='width: 100%;'>
+                            <tr>
+                                <td style='width: 80px;'><strong>{event['Hora']}</strong></td>
+                                <td style='width: 60px;'>{event['Icono']} {event['Moneda']}</td>
+                                <td>{event['Evento']}</td>
+                                <td style='width: 80px;'>{event['Impacto']}</td>
+                            </tr>
+                        </table>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""
+                        <div style='margin: 8px 0; padding: 8px; border-left: 3px solid { "#ff4444" if event["Impacto"] == "High" else "#ffaa00" };'>
+                        <table style='width: 100%;'>
+                            <tr>
+                                <td style='width: 80px;'><strong>{event['Hora']}</strong></td>
+                                <td style='width: 60px;'>{event['Icono']} {event['Moneda']}</td>
+                                <td>{event['Evento']}</td>
+                                <td style='width: 80px;'>{event['Impacto']}</td>
+                            </tr>
+                        </table>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    # Detalles SOLO para eventos pasados
+                    if event['Estado'] == 'pasado' and (event['Actual'] != '-' or event['Pronóstico'] != '-' or event['Anterior'] != '-'):
+                        with st.expander("📊 Ver detalles del resultado", expanded=False):
+                            col1, col2, col3 = st.columns(3)
+                            with col1:
+                                st.metric("Actual", event['Actual'])
+                            with col2:
+                                st.metric("Pronóstico", event['Pronóstico'])
+                            with col3:
+                                st.metric("Anterior", event['Anterior'])
+                            
+                            # Interpretación simple
+                            if event['Actual'] != '-' and event['Pronóstico'] != '-':
+                                try:
+                                    actual_val = float(event['Actual'].replace('%', '').replace('M', '').replace('K', ''))
+                                    forecast_val = float(event['Pronóstico'].replace('%', '').replace('M', '').replace('K', ''))
+                                    
+                                    if actual_val > forecast_val:
+                                        if event['Moneda'] == 'USD':
+                                            st.info("📈 **Interpretación:** Dato mejor de lo esperado → USD FORTALECIDO (bajista para EUR/USD)")
+                                        else:
+                                            st.info("📈 **Interpretación:** Dato mejor de lo esperado → EUR FORTALECIDO (alcista para EUR/USD)")
+                                    elif actual_val < forecast_val:
+                                        if event['Moneda'] == 'USD':
+                                            st.info("📉 **Interpretación:** Dato peor de lo esperado → USD DEBILITADO (alcista para EUR/USD)")
+                                        else:
+                                            st.info("📉 **Interpretación:** Dato peor de lo esperado → EUR DEBILITADO (bajista para EUR/USD)")
+                                except:
+                                    pass
+        
+        # Resumen de eventos
+        st.markdown("---")
+        eventos_alto = events_df[(events_df['Impacto'] == 'High') & (events_df['Estado'] == 'futuro')]
+        eventos_hoy = events_df[(events_df['Fecha'] == today) & (events_df['Estado'] == 'futuro')]
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if len(eventos_alto) > 0:
+                st.warning(f"⚠️ **{len(eventos_alto)} eventos de ALTO impacto** pendientes esta semana")
+            else:
+                st.success("✅ No hay eventos de alto impacto pendientes")
+        with col2:
+            if len(eventos_hoy) > 0:
+                st.info(f"📌 **{len(eventos_hoy)} eventos pendientes** para hoy")
+            else:
+                st.info("📌 Sin eventos pendientes para hoy")
+    
     else:
-        st.info("No hay eventos programados en los próximos días")
+        st.info("📭 No hay eventos programados esta semana para USD/EUR.")
+        st.caption("Los eventos suelen actualizarse 1-2 semanas antes de la fecha")
 
 # TAB 4: ZONAS TÉCNICAS
 with tab4:
